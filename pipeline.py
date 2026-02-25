@@ -21,7 +21,13 @@ from features import (
     build_vader_features,
     build_hybrid_features,
 )
-from models import get_models, build_combinations, run_experiments, ExperimentResult
+from models import (
+    get_models,
+    build_combinations,
+    run_experiments,
+    tune_best_xgboost_hybrid_smote,
+    ExperimentResult,
+)
 
 
 def run_full_experiment(
@@ -77,6 +83,15 @@ def run_full_experiment(
         combinations, models, y_train, y_test
     )
 
+    # Optional: hyperparameter tuning + CV for the best XGBoost Hybrid+SMOTE model
+    tuned_search = None
+    if (
+        best_info.get("model_name") == "XGBoost"
+        and "Hybrid" in best_info.get("comb_name", "")
+        and "SMOTE" in best_info.get("comb_name", "")
+    ):
+        tuned_search = tune_best_xgboost_hybrid_smote(X_train_hybrid, y_train)
+
     return {
         "df": df,
         "X_train_raw": X_train_raw,
@@ -92,6 +107,7 @@ def run_full_experiment(
         "best_info": best_info,
         "best_score": best_score,
         "results": results,
+        "tuned_search": tuned_search,
     }
 
 

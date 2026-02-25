@@ -9,7 +9,13 @@ from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+)
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
 import time
 
@@ -17,6 +23,7 @@ __all__ = [
     "get_models",
     "build_combinations",
     "run_experiments",
+    "tune_best_xgboost_hybrid_smote",
     "ExperimentResult",
 ]
 
@@ -26,6 +33,7 @@ class ExperimentResult:
     combination: str
     model_name: str
     f1_score: float
+    f1_macro: float
     accuracy: float
     elapsed_sec: float
 
@@ -102,6 +110,7 @@ def run_experiments(
     - best_info: dict with best configuration and predictions
     - best_score: highest weighted F1 score
     - results: list[ExperimentResult]
+      (includes both weighted and macro F1)
     """
     best_score = -1.0
     best_info: Dict[str, Any] = {}
@@ -123,25 +132,31 @@ def run_experiments(
 
                 preds = pipeline.predict(X_tes)
 
-                score = f1_score(y_test, preds, average="weighted")
+                f1_weighted = f1_score(y_test, preds, average="weighted")
+                f1_macro = f1_score(y_test, preds, average="macro")
                 acc = accuracy_score(y_test, preds)
                 elapsed = time.time() - start_time
 
-                if score > best_score:
-                    best_score = score
+                if f1_weighted > best_score:
+                    best_score = f1_weighted
                     best_info = {
                         "comb_name": comb_name,
                         "model_name": name,
                         "pipeline": pipeline,
                         "y_test": y_test,
                         "preds": preds,
+                        "classification_report": classification_report(
+                            y_test, preds, digits=4
+                        ),
+                        "confusion_matrix": confusion_matrix(y_test, preds),
                     }
 
                 results.append(
                     ExperimentResult(
                         combination=comb_name,
                         model_name=name,
-                        f1_score=score,
+                        f1_score=f1_weighted,
+                        f1_macro=f1_macro,
                         accuracy=acc,
                         elapsed_sec=elapsed,
                     )
@@ -153,10 +168,64 @@ def run_experiments(
                         combination=comb_name,
                         model_name=f"{name} (ERROR: {e})",
                         f1_score=float("nan"),
+                        f1_macro=float("nan"),
                         accuracy=float("nan"),
                         elapsed_sec=0.0,
                     )
                 )
 
     return best_info, best_score, results
+
+
+def tune_best_xgboost_hybrid_smote(
+    X_train_hybrid: np.ndarray,
+    y_train,
+    n_iter: int = 20,
+    cv: int = 3,
+    random_state: int = 42,
+):
+    """
+    Hyperparameter search for the best XGBoost model on the
+    Hybrid + SMOTE setup, using cross‑validation.
+
+    Returns:
+      randomized_search: fitted RandomizedSearchCV instance
+    """
+    base_model = xgb.XGBClassifier(
+        objective="multi:softmax",
+        num_class=3,
+        eval_metric="mlogloss",
+        random_state=random_state,
+    )
+
+    pipeline = ImbPipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("smote", SMOTE(random_state=random_state)),
+            ("model", base_model),
+        ]
+    )
+
+    param_distributions = {
+        "model__n_estimators": [100, 200, 300],
+        "model__max_depth": [3, 5, 7, 9],
+        "model__learning_rate": [0.01, 0.05, 0.1],
+        "model__subsample": [0.7, 0.9, 1.0],
+        "model__colsample_bytree": [0.7, 0.9, 1.0],
+    }
+
+    search = RandomizedSearchCV(
+        estimator=pipeline,
+        param_distributions=param_distributions,
+        n_iter=n_iter,
+        scoring="f1_weighted",
+        n_jobs=-1,
+        cv=cv,
+        verbose=1,
+        random_state=random_state,
+    )
+
+    search.fit(X_train_hybrid, y_train)
+    return search
+
 
