@@ -1,9 +1,16 @@
-pandas
+# Scientific Packages
 numpy
-matplotlib
-seaborn
+pandas
+
+# ML
+scikit-learn
+imbalanced-learn
+xgboost
+
+# NLP
 nltk
 gensim
-scikit-learn
-xgboost
-imblearn
+
+# Visualization
+matplotlib
+seaborn
