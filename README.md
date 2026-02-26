@@ -1,9 +1,9 @@
 # Yelp Review Sentiment Analysis
 
-## 📖 Project Overview
+##  Project Overview
 This project was developed to practically apply and deepen knowledge of various Natural Language Processing (NLP) techniques learned in the Text and Web Mining course. The primary objective is to analyze user reviews from Yelp and classify their underlying sentiments into three distinct categories: **Negative, Neutral, and Positive**.
 
-## 🚀 Key Features and Methodology
+##  Key Features and Methodology
 
 This project goes beyond standard classification by comparatively exploring complex NLP and machine learning pipelines:
 
@@ -18,19 +18,19 @@ This project goes beyond standard classification by comparatively exploring comp
   4. Hybrid + SMOTE
 * **Modular Architecture:** Following clean code principles, the pipeline is separated into distinct, maintainable modules (data loading, preprocessing, feature extraction, and modeling).
 
-## 🚧 Limitations and Future Work
+## Limitations and Future Work
 
 During the evaluation phase, it was observed that the **Neutral** class frequently gets confused with both **Positive** and **Negative** classes. This overlap is due to the inherent limitations of Word2Vec and the rule-based VADER algorithm, which struggle to fully capture deep contextual nuances, sarcasm, and complex semantic relationships within a sentence.
 
 For future iterations, there is a plan to integrate **Transformer-based architectures (such as BERT or RoBERTa)** to significantly enhance the model's contextual understanding and resolve this misclassification issue.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 * **Language:** Python
 * **Data & Machine Learning:** Pandas, NumPy, Scikit-Learn, XGBoost, Imbalanced-Learn
 * **Natural Language Processing:** NLTK (VADER Lexicon, WordNet), Gensim (Word2Vec)
 
-## ⚙️ Installation
+##  Installation
 
 To run this project locally, install the required dependencies:
 
