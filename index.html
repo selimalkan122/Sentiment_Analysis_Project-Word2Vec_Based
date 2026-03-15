@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Sentiment Analysis Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #020617;
+            border-radius: 16px;
+            padding: 24px 28px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.8);
+            width: 100%;
+            max-width: 640px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 4px;
+        }
+        p.subtitle {
+            margin: 0 0 20px;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            border-radius: 12px;
+            border: 1px solid #1f2937;
+            background: #020617;
+            color: #e5e7eb;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            resize: vertical;
+            box-sizing: border-box;
+            outline: none;
+        }
+        textarea:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 1px #38bdf8;
+        }
+        button {
+            margin-top: 14px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: none;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #ecfdf5;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            font-size: 0.92rem;
+        }
+        .result-label {
+            font-weight: 600;
+        }
+        .result-positive {
+            color: #4ade80;
+        }
+        .result-neutral {
+            color: #e5e7eb;
+        }
+        .result-negative {
+            color: #f97373;
+        }
+        .muted {
+            color: #9ca3af;
+        }
+        .error {
+            color: #fecaca;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Sentiment Analysis</h1>
+        <p class="subtitle">Write a sentence and let the model predict the sentiment and confidence score.</p>
+
+        <textarea id="text-input" placeholder="Example: The food was amazing but the service was slow."></textarea>
+        <button id="analyze-btn">Perform Sentiment Analysis</button>
+
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const btn = document.getElementById("analyze-btn");
+        const textarea = document.getElementById("text-input");
+        const resultDiv = document.getElementById("result");
+
+        function setLoading(isLoading) {
+            btn.disabled = isLoading;
+            btn.textContent = isLoading ? "Analyzing..." : "Perform Sentiment Analysis";
+        }
+
+        function renderResult(data) {
+            if (!data || !data.label) {
+                resultDiv.style.display = "block";
+                resultDiv.innerHTML = '<span class="error">An unexpected output was received.</span>';
+                return;
+            }
+
+            const labelClass =
+                data.label === "positive"
+                    ? "result-positive"
+                    : data.label === "negative"
+                    ? "result-negative"
+                    : "result-neutral";
+
+            const confidence =
+                typeof data.confidence === "number"
+                    ? (data.confidence * 100).toFixed(1) + " %"
+                    : "N/A";
+
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = `
+                <div class="result-label ${labelClass}">
+                    Duygu durumu: <strong>${data.label}</strong>
+                </div>
+                <div class="muted">
+                    Güven oranı: <strong>${confidence}</strong>
+                </div>
+            `;
+        }
+
+        btn.addEventListener("click", async () => {
+            const text = textarea.value.trim();
+            if (!text) {
+                resultDiv.style.display = "block";
+                resultDiv.innerHTML = '<span class="error">Please write a sentence.</span>';
+                return;
+            }
+
+            setLoading(true);
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = '<span class="muted">Analyzing...</span>';
+
+            try {
+                const resp = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ text }),
+                });
+
+                const data = await resp.json().catch(() => null);
+
+                if (!resp.ok) {
+                    const detail = data && data.detail ? String(data.detail) : ("HTTP " + resp.status);
+                    throw new Error(detail);
+                }
+
+                renderResult(data);
+            } catch (err) {
+                console.error(err);
+                resultDiv.style.display = "block";
+                const msg = err && err.message ? err.message : "Unknown error";
+                resultDiv.innerHTML =
+                    '<span class="error">Error: ' +
+                    msg.replaceAll("<", "&lt;").replaceAll(">", "&gt;") +
+                    "</span>";
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>
+

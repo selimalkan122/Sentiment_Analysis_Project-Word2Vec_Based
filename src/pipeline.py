@@ -12,16 +12,16 @@ from typing import Dict, Any, List
 import numpy as np
 import pandas as pd
 
-from data_utils import load_dataset, train_test_split_sentiment
-from preprocessing import cleaning_text
-from features import (
+from .data_utils import load_dataset, train_test_split_sentiment
+from .preprocessing import cleaning_text
+from .features import (
     train_word2vec,
     fit_tfidf,
     transform_tokens_to_w2v,
     build_vader_features,
     build_hybrid_features,
 )
-from models import (
+from .models import (
     get_models,
     build_combinations,
     run_experiments,
@@ -97,6 +97,9 @@ def run_full_experiment(
         "X_test_raw": X_test_raw,
         "y_train": y_train,
         "y_test": y_test,
+        "w2v_model": w2v_model,
+        "tfidf": tfidf,
+        "tfidf_dict": tfidf_dict,
         "X_train_w2v": X_train_w2v,
         "X_test_w2v": X_test_w2v,
         "X_train_vader": X_train_vader,

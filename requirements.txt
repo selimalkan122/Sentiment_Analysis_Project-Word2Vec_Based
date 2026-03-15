@@ -14,3 +14,7 @@ gensim
 # Visualization
 matplotlib
 seaborn
+
+# API & Web
+fastapi
+uvicorn[standard]
