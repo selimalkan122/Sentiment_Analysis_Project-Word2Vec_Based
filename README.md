@@ -121,7 +121,3 @@ curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -
 The **Neutral** class is often confused with Positive and Negative, due to limitations of Word2Vec and rule-based VADER with context and sarcasm. Future work may use **Transformer-based models (e.g. BERT, RoBERTa)** for better contextual understanding.
 
 ---
-
-## License
-
-Use this project for learning and portfolio purposes. Ensure you comply with the terms of any dataset (e.g. Yelp) if you redistribute data.
