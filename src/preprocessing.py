@@ -8,10 +8,15 @@ __all__ = [
     "lemmatizer",
     "get_wordnet_pos",
     "cleaning_text",
+    "NEGATION_WORDS",
 ]
 
 
-stop_words = set(stopwords.words("english"))
+# Negation cues: kept out of stopword removal so phrases like "not good"
+# don't collapse to "good" once the negation word is stripped.
+NEGATION_WORDS = {"no", "not", "nor", "cannot"}
+
+stop_words = set(stopwords.words("english")) - NEGATION_WORDS
 lemmatizer = WordNetLemmatizer()
 
 
@@ -47,7 +52,9 @@ def cleaning_text(text):
 
     clean_tokens = []
     for word, tag in pos_tags:
-        if word not in stop_words and len(word) > 2:
+        if word in NEGATION_WORDS:
+            clean_tokens.append(word)
+        elif word not in stop_words and len(word) > 2:
             wn_tag = get_wordnet_pos(tag)
             lemma = lemmatizer.lemmatize(word, pos=wn_tag)
             clean_tokens.append(lemma)
